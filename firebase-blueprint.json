@@ -1,0 +1,647 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private-to-owner student profile synced with Firebase Auth.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160
+        },
+        "emailVerified": {
+          "type": "boolean"
+        },
+        "collegeDomainVerified": {
+          "type": "boolean"
+        },
+        "department": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "branch": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "semester": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "photoUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "email",
+        "emailVerified",
+        "collegeDomainVerified",
+        "department",
+        "branch",
+        "semester",
+        "photoUrl",
+        "bio",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LostFoundReport": {
+      "title": "LostFoundReport",
+      "description": "Campus lost or found item report without public PII.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["lost", "found"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "ID & Cards",
+            "Electronics",
+            "Books & Notes",
+            "Keys & Wallets",
+            "Accessories",
+            "Lab Gear",
+            "Other"
+          ]
+        },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "location": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "eventDate": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "eventTime": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 20
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "claim_pending", "verified", "reunited", "closed"]
+        },
+        "verificationPrompt": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "handoverLocation": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["campus", "archived"]
+        },
+        "reporterId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "reporterName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "reporterBranch": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "reporterSemester": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "reporterCollegeVerified": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "type",
+        "title",
+        "description",
+        "category",
+        "imageUrl",
+        "location",
+        "eventDate",
+        "eventTime",
+        "status",
+        "verificationPrompt",
+        "handoverLocation",
+        "visibility",
+        "reporterId",
+        "reporterName",
+        "reporterBranch",
+        "reporterSemester",
+        "reporterCollegeVerified",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ExchangeListing": {
+      "title": "ExchangeListing",
+      "description": "ReLife Exchange marketplace listing for books, calculators, lab kits, and electronics.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "listingType": {
+          "type": "string",
+          "enum": ["donate", "sell", "swap", "borrow"]
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Books & Notes",
+            "Calculators",
+            "Lab Kits",
+            "Electronics",
+            "Hostel & Gear",
+            "Other"
+          ]
+        },
+        "condition": {
+          "type": "string",
+          "enum": ["Like New", "Good", "Fair", "Well Used"]
+        },
+        "price": {
+          "type": "number"
+        },
+        "swapFor": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "borrowDuration": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "targetBranch": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "targetSemester": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "subjectCode": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "pickupLocation": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "availability": {
+          "type": "string",
+          "enum": ["available", "requested", "reserved", "completed", "removed"]
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["campus", "archived"]
+        },
+        "sellerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sellerName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "sellerBranch": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "sellerSemester": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "sellerCollegeVerified": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "listingType",
+        "category",
+        "condition",
+        "price",
+        "swapFor",
+        "borrowDuration",
+        "targetBranch",
+        "targetSemester",
+        "subjectCode",
+        "pickupLocation",
+        "imageUrl",
+        "availability",
+        "visibility",
+        "sellerId",
+        "sellerName",
+        "sellerBranch",
+        "sellerSemester",
+        "sellerCollegeVerified",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ItemRequest": {
+      "title": "ItemRequest",
+      "description": "Private exchange request or lost/found verification claim between requester and item owner.",
+      "type": "object",
+      "properties": {
+        "targetType": {
+          "type": "string",
+          "enum": ["exchange", "lost_found"]
+        },
+        "targetId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "targetTitle": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "ownerId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "ownerName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "requesterId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "requesterName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "requesterBranch": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "requesterSemester": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "requesterCollegeVerified": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 500
+        },
+        "verificationAnswer": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "proposedHandoverPoint": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "declined", "completed", "cancelled"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "targetType",
+        "targetId",
+        "targetTitle",
+        "ownerId",
+        "ownerName",
+        "requesterId",
+        "requesterName",
+        "requesterBranch",
+        "requesterSemester",
+        "requesterCollegeVerified",
+        "message",
+        "verificationAnswer",
+        "proposedHandoverPoint",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CampusEvent": {
+      "title": "CampusEvent",
+      "description": "Campus event listing created and managed by authenticated students/organizers without public PII.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Tech & Hackathons",
+            "Workshops & Seminars",
+            "Cultural & Fests",
+            "Clubs & Meetups",
+            "Sports & Wellness",
+            "Placement & Career",
+            "Other"
+          ]
+        },
+        "eventDate": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "eventTime": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 20
+        },
+        "location": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "organizer": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["upcoming", "ongoing", "completed", "cancelled"]
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["campus", "archived"]
+        },
+        "creatorId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "creatorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "creatorBranch": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "creatorSemester": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "creatorCollegeVerified": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "category",
+        "eventDate",
+        "eventTime",
+        "location",
+        "organizer",
+        "imageUrl",
+        "status",
+        "visibility",
+        "creatorId",
+        "creatorName",
+        "creatorBranch",
+        "creatorSemester",
+        "creatorCollegeVerified",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SavedEvent": {
+      "title": "SavedEvent",
+      "description": "Student-saved campus event for personal tracking and local reminder notifications.",
+      "type": "object",
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Tech & Hackathons",
+            "Workshops & Seminars",
+            "Cultural & Fests",
+            "Clubs & Meetups",
+            "Sports & Wellness",
+            "Placement & Career",
+            "Other"
+          ]
+        },
+        "eventDate": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "eventTime": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 20
+        },
+        "location": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "organizer": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "enum": ["upcoming", "ongoing", "completed", "cancelled"]
+        },
+        "isDemo": {
+          "type": "boolean"
+        },
+        "savedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "eventId",
+        "userId",
+        "title",
+        "category",
+        "eventDate",
+        "eventTime",
+        "location",
+        "organizer",
+        "imageUrl",
+        "status",
+        "isDemo",
+        "savedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Student profile documents strictly readable and writable only by the profile owner."
+    },
+    "/users/{userId}/savedEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/SavedEvent" },
+      "description": "Events marked as interested by the user for dashboard tracking and local reminders."
+    },
+    "/lostFoundReports/{reportId}": {
+      "schema": { "$ref": "#/entities/LostFoundReport" },
+      "description": "Campus lost and found reports with visibility scoping and owner-only edits."
+    },
+    "/exchangeListings/{listingId}": {
+      "schema": { "$ref": "#/entities/ExchangeListing" },
+      "description": "ReLife Exchange listings with visibility scoping and owner-only edits."
+    },
+    "/itemRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/ItemRequest" },
+      "description": "Exchange requests and lost/found verification claims scoped strictly to requester and owner."
+    },
+    "/campusEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/CampusEvent" },
+      "description": "Campus events listings with visibility scoping and creator-only management."
+    }
+  }
+}

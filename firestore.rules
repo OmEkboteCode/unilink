@@ -1,0 +1,449 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // --- Entity Validation Blueprints ---
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+        'uid', 'displayName', 'email', 'emailVerified', 'collegeDomainVerified',
+        'department', 'branch', 'semester', 'photoUrl', 'bio', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'uid', 'displayName', 'email', 'emailVerified', 'collegeDomainVerified',
+        'department', 'branch', 'semester', 'photoUrl', 'bio', 'createdAt', 'updatedAt'
+      ])
+      && isValidId(data.uid)
+      && data.uid == request.auth.uid
+      && data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 80
+      && data.email is string && data.email.size() >= 3 && data.email.size() <= 160
+      && data.emailVerified is bool
+      && data.collegeDomainVerified is bool
+      && data.department is string && data.department.size() <= 80
+      && data.branch is string && data.branch.size() <= 80
+      && data.semester is string && data.semester.size() <= 30
+      && data.photoUrl is string && data.photoUrl.size() <= 500
+      && data.bio is string && data.bio.size() <= 300
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidLostFoundReport(data) {
+      return data.keys().hasAll([
+        'type', 'title', 'description', 'category', 'imageUrl', 'location',
+        'eventDate', 'eventTime', 'status', 'verificationPrompt', 'handoverLocation',
+        'visibility', 'reporterId', 'reporterName', 'reporterBranch', 'reporterSemester',
+        'reporterCollegeVerified', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'type', 'title', 'description', 'category', 'imageUrl', 'location',
+        'eventDate', 'eventTime', 'status', 'verificationPrompt', 'handoverLocation',
+        'visibility', 'reporterId', 'reporterName', 'reporterBranch', 'reporterSemester',
+        'reporterCollegeVerified', 'createdAt', 'updatedAt'
+      ])
+      && data.type in ['lost', 'found']
+      && data.title is string && data.title.size() >= 3 && data.title.size() <= 100
+      && data.description is string && data.description.size() >= 10 && data.description.size() <= 1000
+      && data.category in ['ID & Cards', 'Electronics', 'Books & Notes', 'Keys & Wallets', 'Accessories', 'Lab Gear', 'Other']
+      && data.imageUrl is string && data.imageUrl.size() <= 500
+      && data.location is string && data.location.size() >= 2 && data.location.size() <= 120
+      && data.eventDate is string && data.eventDate.size() == 10 && data.eventDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+      && data.eventTime is string && data.eventTime.size() >= 2 && data.eventTime.size() <= 20
+      && data.status in ['open', 'claim_pending', 'verified', 'reunited', 'closed']
+      && data.verificationPrompt is string && data.verificationPrompt.size() <= 200
+      && data.handoverLocation is string && data.handoverLocation.size() <= 120
+      && data.visibility in ['campus', 'archived']
+      && isValidId(data.reporterId)
+      && data.reporterName is string && data.reporterName.size() >= 2 && data.reporterName.size() <= 80
+      && data.reporterBranch is string && data.reporterBranch.size() <= 80
+      && data.reporterSemester is string && data.reporterSemester.size() <= 30
+      && data.reporterCollegeVerified is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidExchangeListing(data) {
+      return data.keys().hasAll([
+        'title', 'description', 'listingType', 'category', 'condition', 'price',
+        'swapFor', 'borrowDuration', 'targetBranch', 'targetSemester', 'subjectCode',
+        'pickupLocation', 'imageUrl', 'availability', 'visibility', 'sellerId',
+        'sellerName', 'sellerBranch', 'sellerSemester', 'sellerCollegeVerified',
+        'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'title', 'description', 'listingType', 'category', 'condition', 'price',
+        'swapFor', 'borrowDuration', 'targetBranch', 'targetSemester', 'subjectCode',
+        'pickupLocation', 'imageUrl', 'availability', 'visibility', 'sellerId',
+        'sellerName', 'sellerBranch', 'sellerSemester', 'sellerCollegeVerified',
+        'createdAt', 'updatedAt'
+      ])
+      && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
+      && data.description is string && data.description.size() >= 10 && data.description.size() <= 1000
+      && data.listingType in ['donate', 'sell', 'swap', 'borrow']
+      && data.category in ['Books & Notes', 'Calculators', 'Lab Kits', 'Electronics', 'Hostel & Gear', 'Other']
+      && data.condition in ['Like New', 'Good', 'Fair', 'Well Used']
+      && (data.price is int || data.price is float) && data.price >= 0 && data.price <= 100000
+      && (data.listingType == 'sell' || data.price == 0)
+      && data.swapFor is string && data.swapFor.size() <= 120
+      && data.borrowDuration is string && data.borrowDuration.size() <= 60
+      && data.targetBranch is string && data.targetBranch.size() <= 80
+      && data.targetSemester is string && data.targetSemester.size() <= 30
+      && data.subjectCode is string && data.subjectCode.size() <= 40
+      && data.pickupLocation is string && data.pickupLocation.size() >= 2 && data.pickupLocation.size() <= 120
+      && data.imageUrl is string && data.imageUrl.size() <= 500
+      && data.availability in ['available', 'requested', 'reserved', 'completed', 'removed']
+      && data.visibility in ['campus', 'archived']
+      && isValidId(data.sellerId)
+      && data.sellerName is string && data.sellerName.size() >= 2 && data.sellerName.size() <= 80
+      && data.sellerBranch is string && data.sellerBranch.size() <= 80
+      && data.sellerSemester is string && data.sellerSemester.size() <= 30
+      && data.sellerCollegeVerified is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidItemRequest(data) {
+      return data.keys().hasAll([
+        'targetType', 'targetId', 'targetTitle', 'ownerId', 'ownerName',
+        'requesterId', 'requesterName', 'requesterBranch', 'requesterSemester',
+        'requesterCollegeVerified', 'message', 'verificationAnswer',
+        'proposedHandoverPoint', 'status', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'targetType', 'targetId', 'targetTitle', 'ownerId', 'ownerName',
+        'requesterId', 'requesterName', 'requesterBranch', 'requesterSemester',
+        'requesterCollegeVerified', 'message', 'verificationAnswer',
+        'proposedHandoverPoint', 'status', 'createdAt', 'updatedAt'
+      ])
+      && data.targetType in ['exchange', 'lost_found']
+      && isValidId(data.targetId)
+      && data.targetTitle is string && data.targetTitle.size() >= 2 && data.targetTitle.size() <= 120
+      && isValidId(data.ownerId)
+      && data.ownerName is string && data.ownerName.size() >= 2 && data.ownerName.size() <= 80
+      && isValidId(data.requesterId)
+      && data.requesterName is string && data.requesterName.size() >= 2 && data.requesterName.size() <= 80
+      && data.requesterBranch is string && data.requesterBranch.size() <= 80
+      && data.requesterSemester is string && data.requesterSemester.size() <= 30
+      && data.requesterCollegeVerified is bool
+      && data.message is string && data.message.size() >= 5 && data.message.size() <= 500
+      && data.verificationAnswer is string && data.verificationAnswer.size() <= 300
+      && data.proposedHandoverPoint is string && data.proposedHandoverPoint.size() >= 2 && data.proposedHandoverPoint.size() <= 120
+      && data.status in ['pending', 'accepted', 'declined', 'completed', 'cancelled']
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidCampusEvent(data) {
+      return data.keys().hasAll([
+        'title', 'description', 'category', 'eventDate', 'eventTime',
+        'location', 'organizer', 'imageUrl', 'status', 'visibility',
+        'creatorId', 'creatorName', 'creatorBranch', 'creatorSemester',
+        'creatorCollegeVerified', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'title', 'description', 'category', 'eventDate', 'eventTime',
+        'location', 'organizer', 'imageUrl', 'status', 'visibility',
+        'creatorId', 'creatorName', 'creatorBranch', 'creatorSemester',
+        'creatorCollegeVerified', 'createdAt', 'updatedAt'
+      ])
+      && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
+      && data.description is string && data.description.size() >= 10 && data.description.size() <= 1000
+      && data.category in [
+        'Tech & Hackathons', 'Workshops & Seminars', 'Cultural & Fests',
+        'Clubs & Meetups', 'Sports & Wellness', 'Placement & Career', 'Other'
+      ]
+      && data.eventDate is string && data.eventDate.size() == 10 && data.eventDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+      && data.eventTime is string && data.eventTime.size() >= 2 && data.eventTime.size() <= 20
+      && data.location is string && data.location.size() >= 2 && data.location.size() <= 120
+      && data.organizer is string && data.organizer.size() >= 2 && data.organizer.size() <= 100
+      && data.imageUrl is string && data.imageUrl.size() <= 500
+      && data.status in ['upcoming', 'ongoing', 'completed', 'cancelled']
+      && data.visibility in ['campus', 'archived']
+      && isValidId(data.creatorId)
+      && data.creatorName is string && data.creatorName.size() >= 2 && data.creatorName.size() <= 80
+      && data.creatorBranch is string && data.creatorBranch.size() <= 80
+      && data.creatorSemester is string && data.creatorSemester.size() <= 30
+      && data.creatorCollegeVerified is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidSavedEvent(data) {
+      return data.keys().hasAll([
+        'eventId', 'userId', 'title', 'category', 'eventDate', 'eventTime',
+        'location', 'organizer', 'imageUrl', 'status', 'isDemo', 'savedAt'
+      ])
+      && data.keys().hasOnly([
+        'eventId', 'userId', 'title', 'category', 'eventDate', 'eventTime',
+        'location', 'organizer', 'imageUrl', 'status', 'isDemo', 'savedAt'
+      ])
+      && isValidId(data.eventId)
+      && isValidId(data.userId)
+      && data.userId == request.auth.uid
+      && data.title is string && data.title.size() >= 3 && data.title.size() <= 120
+      && data.category in [
+        'Tech & Hackathons', 'Workshops & Seminars', 'Cultural & Fests',
+        'Clubs & Meetups', 'Sports & Wellness', 'Placement & Career', 'Other'
+      ]
+      && data.eventDate is string && data.eventDate.size() == 10 && data.eventDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+      && data.eventTime is string && data.eventTime.size() >= 2 && data.eventTime.size() <= 20
+      && data.location is string && data.location.size() >= 2 && data.location.size() <= 120
+      && data.organizer is string && data.organizer.size() >= 2 && data.organizer.size() <= 100
+      && data.imageUrl is string && data.imageUrl.size() <= 500
+      && data.status in ['upcoming', 'ongoing', 'completed', 'cancelled']
+      && data.isDemo is bool
+      && data.savedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    // 1. Users (Strict PII Isolation: owner-only get, create, update; no list)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId)
+        && isVerifiedUser()
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isVerifiedUser()
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().email == existing().email
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'emailVerified', 'collegeDomainVerified',
+          'department', 'branch', 'semester', 'photoUrl', 'bio', 'updatedAt'
+        ]);
+      allow delete: if false;
+
+      // 1b. Saved Events (Owner-only interested event bookmarks & reminders)
+      match /savedEvents/{eventId} {
+        allow get, list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId)
+          && isValidId(eventId)
+          && isVerifiedUser()
+          && isOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidSavedEvent(incoming())
+          && incoming().userId == userId
+          && incoming().eventId == eventId
+          && incoming().savedAt == request.time;
+        allow update: if isValidId(userId)
+          && isValidId(eventId)
+          && isVerifiedUser()
+          && isOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidSavedEvent(incoming())
+          && incoming().userId == existing().userId
+          && incoming().eventId == existing().eventId
+          && incoming().savedAt == request.time;
+        allow delete: if isValidId(userId)
+          && isValidId(eventId)
+          && isVerifiedUser()
+          && isOwner(userId);
+      }
+    }
+
+    // 2. Lost & Found Reports
+    match /lostFoundReports/{reportId} {
+      allow get: if isValidId(reportId)
+        && isSignedIn()
+        && (existing().visibility == 'campus' || existing().reporterId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.visibility == 'campus' || resource.data.reporterId == request.auth.uid);
+      allow create: if isValidId(reportId)
+        && isVerifiedUser()
+        && isValidLostFoundReport(incoming())
+        && incoming().reporterId == request.auth.uid
+        && incoming().status == 'open'
+        && incoming().visibility == 'campus'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(reportId)
+        && isVerifiedUser()
+        && isValidLostFoundReport(incoming())
+        && existing().reporterId == request.auth.uid
+        && incoming().reporterId == existing().reporterId
+        && incoming().type == existing().type
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && !(existing().status in ['reunited', 'closed'])
+        && (
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'description', 'category', 'imageUrl', 'location',
+            'eventDate', 'eventTime', 'verificationPrompt', 'handoverLocation',
+            'reporterName', 'reporterBranch', 'reporterSemester', 'updatedAt'
+          ])) ||
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'status', 'handoverLocation', 'visibility', 'updatedAt'
+          ]))
+        );
+      allow delete: if isValidId(reportId)
+        && isVerifiedUser()
+        && existing().reporterId == request.auth.uid;
+    }
+
+    // 3. ReLife Exchange Listings
+    match /exchangeListings/{listingId} {
+      allow get: if isValidId(listingId)
+        && isSignedIn()
+        && (existing().visibility == 'campus' || existing().sellerId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.visibility == 'campus' || resource.data.sellerId == request.auth.uid);
+      allow create: if isValidId(listingId)
+        && isVerifiedUser()
+        && isValidExchangeListing(incoming())
+        && incoming().sellerId == request.auth.uid
+        && incoming().availability == 'available'
+        && incoming().visibility == 'campus'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(listingId)
+        && isVerifiedUser()
+        && isValidExchangeListing(incoming())
+        && existing().sellerId == request.auth.uid
+        && incoming().sellerId == existing().sellerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && !(existing().availability in ['completed', 'removed'])
+        && (
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'description', 'listingType', 'category', 'condition', 'price',
+            'swapFor', 'borrowDuration', 'targetBranch', 'targetSemester', 'subjectCode',
+            'pickupLocation', 'imageUrl', 'sellerName', 'sellerBranch', 'sellerSemester',
+            'updatedAt'
+          ])) ||
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'availability', 'visibility', 'updatedAt'
+          ]))
+        );
+      allow delete: if isValidId(listingId)
+        && isVerifiedUser()
+        && existing().sellerId == request.auth.uid;
+    }
+
+    // 4. Item Requests & Claim Verifications
+    match /itemRequests/{requestId} {
+      allow get: if isValidId(requestId)
+        && isSignedIn()
+        && (existing().requesterId == request.auth.uid || existing().ownerId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.requesterId == request.auth.uid || resource.data.ownerId == request.auth.uid);
+      allow create: if isValidId(requestId)
+        && isVerifiedUser()
+        && isValidItemRequest(incoming())
+        && incoming().requesterId == request.auth.uid
+        && incoming().ownerId != request.auth.uid
+        && incoming().status == 'pending'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          (incoming().targetType == 'exchange'
+            && exists(/databases/$(database)/documents/exchangeListings/$(incoming().targetId))
+            && get(/databases/$(database)/documents/exchangeListings/$(incoming().targetId)).data.sellerId == incoming().ownerId
+            && get(/databases/$(database)/documents/exchangeListings/$(incoming().targetId)).data.availability in ['available', 'requested'])
+          ||
+          (incoming().targetType == 'lost_found'
+            && exists(/databases/$(database)/documents/lostFoundReports/$(incoming().targetId))
+            && get(/databases/$(database)/documents/lostFoundReports/$(incoming().targetId)).data.reporterId == incoming().ownerId
+            && get(/databases/$(database)/documents/lostFoundReports/$(incoming().targetId)).data.status in ['open', 'claim_pending', 'verified'])
+        );
+      allow update: if isValidId(requestId)
+        && isVerifiedUser()
+        && isValidItemRequest(incoming())
+        && incoming().targetType == existing().targetType
+        && incoming().targetId == existing().targetId
+        && incoming().ownerId == existing().ownerId
+        && incoming().requesterId == existing().requesterId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && !(existing().status in ['declined', 'completed', 'cancelled'])
+        && (
+          (existing().ownerId == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+            && (
+              (existing().status == 'pending' && incoming().status in ['accepted', 'declined'])
+              || (existing().status == 'accepted' && incoming().status in ['completed', 'declined'])
+            ))
+          ||
+          (existing().requesterId == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+            && incoming().status == 'cancelled')
+        );
+      allow delete: if false;
+    }
+
+    // 5. Campus Events
+    match /campusEvents/{eventId} {
+      allow get: if isValidId(eventId)
+        && isSignedIn()
+        && (existing().visibility == 'campus' || existing().creatorId == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.visibility == 'campus' || resource.data.creatorId == request.auth.uid);
+      allow create: if isValidId(eventId)
+        && isVerifiedUser()
+        && isValidCampusEvent(incoming())
+        && incoming().creatorId == request.auth.uid
+        && incoming().status == 'upcoming'
+        && incoming().visibility == 'campus'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(eventId)
+        && isVerifiedUser()
+        && isValidCampusEvent(incoming())
+        && existing().creatorId == request.auth.uid
+        && incoming().creatorId == existing().creatorId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && !(existing().status in ['completed', 'cancelled'])
+        && (
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'description', 'category', 'eventDate', 'eventTime',
+            'location', 'organizer', 'imageUrl', 'creatorName',
+            'creatorBranch', 'creatorSemester', 'updatedAt'
+          ])) ||
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'status', 'visibility', 'updatedAt'
+          ]))
+        );
+      allow delete: if isValidId(eventId)
+        && isVerifiedUser()
+        && existing().creatorId == request.auth.uid;
+    }
+  }
+}

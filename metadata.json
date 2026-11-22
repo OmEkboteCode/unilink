@@ -1,0 +1,6 @@
+{
+  "name": "UniLink AI",
+  "description": "An intelligent campus connection and resource-sharing ecosystem: Lost Things Found. Unused Things Reimagined. Students Connected.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
